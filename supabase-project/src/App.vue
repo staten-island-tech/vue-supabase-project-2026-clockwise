@@ -1,7 +1,12 @@
 <template>
-  <div></div>
+  <routerview></routerview>
 </template>
 
 <script setup></script>
 
-<style scoped></style>
+<style scoped>
+* {
+  margin: 0;
+  padding: 0;
+}
+</style>
