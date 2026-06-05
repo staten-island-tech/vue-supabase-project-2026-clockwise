@@ -1,4 +1,4 @@
- <template>
+<template>
   <h1>hi</h1>
   <div>Money: {{ starterMoney.toFixed(2) }}</div>
 
