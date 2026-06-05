@@ -18,16 +18,19 @@
         "./types/nitro-imports"
       ],
       "~/*": [
-        "../*"
+        "../app/*"
       ],
       "@/*": [
-        "../*"
+        "../app/*"
       ],
       "~~/*": [
         "../*"
       ],
       "@@/*": [
         "../*"
+      ],
+      "nuxt": [
+        "../node_modules/nuxt"
       ],
       "@unhead/vue": [
         "../node_modules/@unhead/vue"
@@ -41,29 +44,8 @@
       "@vue/compiler-sfc": [
         "../node_modules/@vue/compiler-sfc"
       ],
-      "vue-router": [
-        "../node_modules/vue-router"
-      ],
-      "vue-router/auto-routes": [
-        "../node_modules/vue-router/vue-router-auto-routes"
-      ],
       "@nuxt/schema": [
         "../node_modules/@nuxt/schema"
-      ],
-      "nuxt": [
-        "../node_modules/nuxt"
-      ],
-      "vite/client": [
-        "../node_modules/vite/client"
-      ],
-      "nitropack/types": [
-        "../node_modules/nitropack/types"
-      ],
-      "nitropack/runtime": [
-        "../node_modules/nitropack/runtime"
-      ],
-      "nitropack": [
-        "../node_modules/nitropack"
       ],
       "defu": [
         "../node_modules/defu"
@@ -80,8 +62,17 @@
       "crossws": [
         "../node_modules/crossws"
       ],
-      "vue": [
-        "../node_modules/vue"
+      "vite/client": [
+        "../node_modules/vite/client"
+      ],
+      "nitropack/types": [
+        "../node_modules/nitropack/types"
+      ],
+      "nitropack/runtime": [
+        "../node_modules/nitropack/runtime"
+      ],
+      "nitropack": [
+        "../node_modules/nitropack"
       ],
       "#shared": [
         "../shared"
@@ -106,6 +97,15 @@
       ],
       "#unhead/composables": [
         "../node_modules/nuxt/dist/head/runtime/composables"
+      ],
+      "#supabase/server": [
+        "../node_modules/@nuxtjs/supabase/dist/runtime/server/services"
+      ],
+      "#supabase/server/*": [
+        "../node_modules/@nuxtjs/supabase/dist/runtime/server/services/*"
+      ],
+      "#supabase/database": [
+        "./types/supabase-database"
       ]
     },
     "lib": [
@@ -128,6 +128,8 @@
     "../node_modules",
     "../../node_modules",
     "../node_modules/nuxt/node_modules",
+    "../node_modules/@nuxtjs/supabase/node_modules",
+    "../node_modules/@pinia/nuxt/node_modules",
     "../node_modules/@nuxt/devtools/node_modules",
     "../node_modules/@nuxt/telemetry/node_modules",
     "../dist"

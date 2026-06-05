@@ -651,7 +651,33 @@ const _inlineRuntimeConfig = {
       }
     }
   },
-  "public": {}
+  "public": {
+    "supabase": {
+      "url": "https://gotxxgvyoqwvedubdrcz.supabase.co",
+      "key": "sb_publishable_kpsmabVTGZNFFF2N89yNEQ_fxCyoF9K",
+      "redirect": false,
+      "redirectOptions": {
+        "login": "/login",
+        "callback": "/confirm",
+        "exclude": [],
+        "cookieRedirect": false,
+        "saveRedirectToCookie": false
+      },
+      "cookieName": "sb",
+      "cookiePrefix": "sb-gotxxgvyoqwvedubdrcz-auth-token",
+      "useSsrCookies": true,
+      "cookieOptions": {
+        "maxAge": 28800,
+        "sameSite": "lax",
+        "secure": true
+      },
+      "clientOptions": {}
+    }
+  },
+  "supabase": {
+    "serviceKey": "",
+    "secretKey": ""
+  }
 };
 const envOptions = {
   prefix: "NITRO_",
