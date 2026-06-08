@@ -1,85 +1,87 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-    <div class="w-full max-w-md bg-white rounded-xl shadow-md p-6">
-      <h1 class="text-2xl font-semibold text-center mb-4">Welcome</h1>
-      <p class="text-sm text-center text-gray-500 mb-6">
-        Sign in or create an account
-      </p>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title">Welcome</h1>
+        <p class="auth-subtitle">Sign in or create a new account</p>
+      </div>
 
-      <div class="flex justify-center mb-4">
+      <!-- Tab Toggle -->
+      <div class="tab-group">
         <button
           @click="mode = 'login'"
-          :class="
-            mode === 'login'
-              ? 'bg-blue-600 text-white'
-              : 'bg-transparent text-blue-600'
-          "
-          class="px-4 py-2 rounded-l border border-blue-600"
+          :class="{ 'tab-active': mode === 'login' }"
+          class="tab-button"
         >
           Login
         </button>
         <button
           @click="mode = 'signup'"
-          :class="
-            mode === 'signup'
-              ? 'bg-blue-600 text-white'
-              : 'bg-transparent text-blue-600'
-          "
-          class="px-4 py-2 rounded-r border border-blue-600"
+          :class="{ 'tab-active': mode === 'signup' }"
+          class="tab-button"
         >
-          Create Account
+          Sign Up
         </button>
       </div>
 
-      <form @submit.prevent="mode === 'login' ? handleLogin() : handleSignUp()">
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >Username</label
-          >
+      <!-- Form -->
+      <form
+        @submit.prevent="mode === 'login' ? handleLogin() : handleSignUp()"
+        class="auth-form"
+      >
+        <!-- Username Field -->
+        <div class="form-group">
+          <label class="form-label">Username</label>
           <input
             v-model="username"
-            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+            type="text"
+            placeholder="Enter your username"
+            class="form-input"
           />
         </div>
 
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >Password</label
-          >
+        <!-- Password Field -->
+        <div class="form-group">
+          <label class="form-label">Password</label>
           <input
-            type="password"
             v-model="password"
-            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-          />
-        </div>
-
-        <div v-if="mode === 'signup'" class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >Confirm Password</label
-          >
-          <input
             type="password"
-            v-model="confirmPassword"
-            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+            placeholder="Enter your password"
+            class="form-input"
           />
         </div>
 
-        <div class="flex items-center justify-between mb-4">
-          <div class="text-sm text-red-600">{{ error }}</div>
-          <div class="text-sm text-green-600">{{ message }}</div>
+        <!-- Confirm Password Field (Signup only) -->
+        <div v-if="mode === 'signup'" class="form-group animate-fadeIn">
+          <label class="form-label">Confirm Password</label>
+          <input
+            v-model="confirmPassword"
+            type="password"
+            placeholder="Confirm your password"
+            class="form-input"
+          />
         </div>
 
-        <button
-          type="submit"
-          class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-        >
-          {{ mode === "login" ? "Login" : "Create Account" }}
+        <!-- Messages -->
+        <div class="message-container">
+          <div v-if="error" class="message message-error">
+            <span>⚠</span> {{ error }}
+          </div>
+          <div v-if="message" class="message message-success">
+            <span>✓</span> {{ message }}
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-button">
+          {{ mode === "login" ? "Sign In" : "Create Account" }}
         </button>
       </form>
 
-      <div class="mt-4 text-center text-sm text-gray-500">
-        Demo auth stored in localStorage. Replace with a real backend for
-        production.
+      <!-- Footer -->
+      <div class="auth-footer">
+        <p>Demo auth stored in localStorage.</p>
+        <p>Replace with a real backend for production.</p>
       </div>
     </div>
   </div>
@@ -144,4 +146,195 @@ function handleLogin() {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Container */
+.auth-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #f0f9ff, #e0e7ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* Card */
+.auth-card {
+  width: 100%;
+  max-width: 28rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* Header */
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+  color: #6b7280;
+}
+
+/* Tabs */
+.tab-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  background-color: #f3f4f6;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  color: #4b5563;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.tab-button:hover {
+  color: #111827;
+}
+
+.tab-button.tab-active {
+  background-color: white;
+  color: #2563eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Form */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Messages */
+.message-container {
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.message-error {
+  color: #dc2626;
+}
+
+.message-success {
+  color: #16a34a;
+}
+
+/* Button */
+.submit-button {
+  width: 100%;
+  padding: 0.625rem;
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  color: white;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.submit-button:hover {
+  background: linear-gradient(to right, #1d4ed8, #4338ca);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.submit-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Footer */
+.auth-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.auth-footer p {
+  margin: 0;
+}
+
+.auth-footer p + p {
+  margin-top: 0.25rem;
+}
+
+/* Animations */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+</style>
