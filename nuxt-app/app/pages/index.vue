@@ -73,10 +73,7 @@
         </button>
       </form>
 
-      <div class="auth-footer">
-        <p>Demo auth stored in Supabase.</p>
-        <p>Replace with your production Supabase setup as needed.</p>
-      </div>
+      <div class="auth-footer"></div>
     </div>
   </div>
 </template>
