@@ -89,6 +89,13 @@
 
 <script setup>
 import { ref } from "vue";
+<<<<<<< Updated upstream
+=======
+import { useRouter } from "vue-router";
+import { supabase } from "../supabaseClient"; // adjust path if needed
+
+const router = useRouter();
+>>>>>>> Stashed changes
 
 const mode = ref("login");
 const username = ref("");
@@ -124,9 +131,45 @@ function handleSignUp() {
     error.value = "Username already exists.";
     return;
   }
+<<<<<<< Updated upstream
   users[username.value] = { password: password.value };
   saveUsers(users);
   message.value = "Account created. You can now log in.";
+=======
+
+  loading.value = true;
+
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email: email.value,
+    password: password.value,
+  });
+
+  if (signUpError) {
+    error.value = signUpError.message;
+    loading.value = false;
+    return;
+  }
+
+  // Create starter rows tied to the new auth user
+  const uid = data.user.id;
+  const { error: userDataError } = await supabase
+    .from("user_data")
+    .insert({ id: uid, balance: 100, xp: 0, total_amount_gambled: 0 });
+
+  if (userDataError) {
+    error.value =
+      "Account created but profile setup failed: " + userDataError.message;
+    loading.value = false;
+    return;
+  }
+
+  await supabase
+    .from("misc")
+    .insert({ user_id: uid, xp: 0, level: 1, rakeback_balance: 0 });
+
+  loading.value = false;
+  message.value = "Account created! You can now sign in.";
+>>>>>>> Stashed changes
   mode.value = "login";
   password.value = "";
   confirmPassword.value = "";
@@ -141,8 +184,28 @@ function handleLogin() {
     error.value = "Invalid username or password.";
     return;
   }
+<<<<<<< Updated upstream
   message.value = `Welcome, ${username.value}!`;
   localStorage.setItem("sessionUser", username.value);
+=======
+
+  loading.value = true;
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value,
+  });
+
+  loading.value = false;
+
+  if (signInError) {
+    error.value = "Invalid email or password.";
+    return;
+  }
+
+  // Redirect to game page on successful login
+  router.push("/game");
+>>>>>>> Stashed changes
 }
 </script>
 
