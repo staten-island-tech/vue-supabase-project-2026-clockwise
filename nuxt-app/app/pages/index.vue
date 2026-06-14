@@ -29,10 +29,7 @@
         @submit.prevent="mode === 'login' ? handleLogin() : handleSignUp()"
         class="auth-form"
       >
-<<<<<<< Updated upstream
-=======
         <!-- Email Field -->
->>>>>>> Stashed changes
         <div class="form-group">
           <label class="form-label">Email</label>
           <input
@@ -43,6 +40,7 @@
           />
         </div>
 
+        <!-- Password Field -->
         <div class="form-group">
           <label class="form-label">Password</label>
           <input
@@ -53,6 +51,7 @@
           />
         </div>
 
+        <!-- Confirm Password Field (Signup only) -->
         <div v-if="mode === 'signup'" class="form-group animate-fadeIn">
           <label class="form-label">Confirm Password</label>
           <input
@@ -63,34 +62,16 @@
           />
         </div>
 
-        <!-- Modal popup (replaces inline notifications) -->
-        <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-          <div class="modal" role="dialog" aria-modal="true">
-            <button class="modal-close" @click="closeModal">✕</button>
-            <div
-              :class="[
-                'modal-icon',
-                modalType === 'success' ? 'modal-success' : 'modal-error',
-              ]"
-            >
-              <span v-if="modalType === 'success'">✓</span>
-              <span v-else>⚠</span>
-            </div>
-            <div class="modal-content">{{ modalMessage }}</div>
-            <div class="modal-actions">
-              <button class="modal-btn" @click="closeModal">Close</button>
-            </div>
+        <!-- Messages -->
+        <div class="message-container">
+          <div v-if="error" class="message message-error">
+            <span>⚠</span> {{ error }}
+          </div>
+          <div v-if="message" class="message message-success">
+            <span>✓</span> {{ message }}
           </div>
         </div>
 
-<<<<<<< Updated upstream
-        <button type="submit" class="submit-button">
-          {{ mode === "login" ? "Sign In" : "Create Account" }}
-        </button>
-      </form>
-
-      <div class="auth-footer"></div>
-=======
         <!-- Submit Button -->
         <button type="submit" class="submit-button" :disabled="loading">
           {{
@@ -107,7 +88,6 @@
       <div class="auth-footer">
         <p>Auth powered by Supabase.</p>
       </div>
->>>>>>> Stashed changes
     </div>
   </div>
 </template>
@@ -115,11 +95,9 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import { supabase } from "../supabaseClient"; // adjust path if needed
+import { supabase } from "../lib/supabase";
 
 const router = useRouter();
-
-const supabase = useSupabaseClient();
 
 const mode = ref("login");
 const email = ref("");
@@ -129,61 +107,18 @@ const error = ref("");
 const message = ref("");
 const loading = ref(false);
 
-<<<<<<< Updated upstream
-// Modal state
-const showModal = ref(false);
-const modalMessage = ref("");
-const modalType = ref("success");
-
-function usernameToEmail(u) {
-  return u.includes("@") ? u : `${u}@example.com`;
-}
-
-async function handleSignUp() {
-  error.value = "";
-  message.value = "";
-  if (!username.value || !password.value) {
-    error.value = "Username and password are required.";
-    modalMessage.value = error.value;
-    modalType.value = "error";
-    showModal.value = true;
-=======
 async function handleSignUp() {
   error.value = "";
   message.value = "";
 
   if (!email.value || !password.value) {
     error.value = "Email and password are required.";
->>>>>>> Stashed changes
     return;
   }
   if (password.value !== confirmPassword.value) {
     error.value = "Passwords do not match.";
-    modalMessage.value = error.value;
-    modalType.value = "error";
-    showModal.value = true;
     return;
   }
-<<<<<<< Updated upstream
-
-  const email = usernameToEmail(username.value);
-  const { data, error: supError } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-  if (supError) {
-    error.value = supError.message || JSON.stringify(supError);
-    modalMessage.value = error.value;
-    modalType.value = "error";
-    showModal.value = true;
-    return;
-  }
-
-  modalMessage.value =
-    "Account created. Check your email to confirm (if required).";
-  modalType.value = "success";
-  showModal.value = true;
-=======
   if (password.value.length < 6) {
     error.value = "Password must be at least 6 characters.";
     return;
@@ -202,11 +137,15 @@ async function handleSignUp() {
     return;
   }
 
-  // Create starter rows tied to the new auth user
   const uid = data.user.id;
-  const { error: userDataError } = await supabase
-    .from("user_data")
-    .insert({ id: uid, balance: 100, xp: 0, total_amount_gambled: 0 });
+
+  const { error: userDataError } = await supabase.from("user_data").insert({
+    id: uid,
+    user_email: email.value,
+    balance: 100,
+    xp: 0,
+    total_amount_gambled: 0,
+  });
 
   if (userDataError) {
     error.value =
@@ -221,7 +160,6 @@ async function handleSignUp() {
 
   loading.value = false;
   message.value = "Account created! You can now sign in.";
->>>>>>> Stashed changes
   mode.value = "login";
   password.value = "";
   confirmPassword.value = "";
@@ -230,38 +168,6 @@ async function handleSignUp() {
 async function handleLogin() {
   error.value = "";
   message.value = "";
-<<<<<<< Updated upstream
-  if (!username.value || !password.value) {
-    error.value = "Username and password are required.";
-    modalMessage.value = error.value;
-    modalType.value = "error";
-    showModal.value = true;
-    return;
-  }
-
-  const email = usernameToEmail(username.value);
-  const { data, error: supError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (supError) {
-    error.value = supError.message || JSON.stringify(supError);
-    modalMessage.value = error.value;
-    modalType.value = "error";
-    showModal.value = true;
-    return;
-  }
-
-  modalMessage.value = `Welcome, ${username.value}!`;
-  modalType.value = "success";
-  showModal.value = true;
-  password.value = "";
-}
-
-function closeModal() {
-  showModal.value = false;
-  modalMessage.value = "";
-=======
 
   if (!email.value || !password.value) {
     error.value = "Email and password are required.";
@@ -282,9 +188,7 @@ function closeModal() {
     return;
   }
 
-  // Redirect to game page on successful login
   router.push("/game");
->>>>>>> Stashed changes
 }
 </script>
 
@@ -447,62 +351,5 @@ function closeModal() {
 }
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
-}
-
-/* Modal styles */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(15, 23, 42, 0.5);
-  z-index: 50;
-}
-.modal {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  width: 90%;
-  max-width: 28rem;
-  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.4);
-  position: relative;
-  text-align: center;
-}
-.modal-close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: transparent;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-}
-.modal-icon {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-.modal-success {
-  color: #16a34a;
-}
-.modal-error {
-  color: #dc2626;
-}
-.modal-content {
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 0.75rem;
-}
-.modal-actions {
-  display: flex;
-  justify-content: center;
-}
-.modal-btn {
-  padding: 0.5rem 0.75rem;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
 }
 </style>
