@@ -6,7 +6,6 @@
         <p class="auth-subtitle">Sign in or create a new account</p>
       </div>
 
-      <!-- Tab Toggle -->
       <div class="tab-group">
         <button
           @click="mode = 'login'"
@@ -24,23 +23,20 @@
         </button>
       </div>
 
-      <!-- Form -->
       <form
         @submit.prevent="mode === 'login' ? handleLogin() : handleSignUp()"
         class="auth-form"
       >
-        <!-- Username Field -->
         <div class="form-group">
-          <label class="form-label">Username</label>
+          <label class="form-label">Email</label>
           <input
-            v-model="username"
-            type="text"
-            placeholder="Enter your username"
+            v-model="email"
+            type="email"
+            placeholder="Enter your email"
             class="form-input"
           />
         </div>
 
-        <!-- Password Field -->
         <div class="form-group">
           <label class="form-label">Password</label>
           <input
@@ -51,7 +47,6 @@
           />
         </div>
 
-        <!-- Confirm Password Field (Signup only) -->
         <div v-if="mode === 'signup'" class="form-group animate-fadeIn">
           <label class="form-label">Confirm Password</label>
           <input
@@ -62,7 +57,6 @@
           />
         </div>
 
-        <!-- Messages -->
         <div class="message-container">
           <div v-if="error" class="message message-error">
             <span>⚠</span> {{ error }}
@@ -72,16 +66,19 @@
           </div>
         </div>
 
-        <!-- Submit Button -->
-        <button type="submit" class="submit-button">
-          {{ mode === "login" ? "Sign In" : "Create Account" }}
+        <button type="submit" class="submit-button" :disabled="loading">
+          {{
+            loading
+              ? "Please wait..."
+              : mode === "login"
+                ? "Sign In"
+                : "Create Account"
+          }}
         </button>
       </form>
 
-      <!-- Footer -->
       <div class="auth-footer">
-        <p>Demo auth stored in localStorage.</p>
-        <p>Replace with a real backend for production.</p>
+        <p>Auth powered by Supabase.</p>
       </div>
     </div>
   </div>
@@ -89,53 +86,33 @@
 
 <script setup>
 import { ref } from "vue";
-<<<<<<< Updated upstream
-=======
 import { useRouter } from "vue-router";
-import { supabase } from "../supabaseClient"; // adjust path if needed
+import { supabase } from "../lib/supabase";
 
 const router = useRouter();
->>>>>>> Stashed changes
-
 const mode = ref("login");
-const username = ref("");
+const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const error = ref("");
 const message = ref("");
+const loading = ref(false);
 
-function loadUsers() {
-  try {
-    return JSON.parse(localStorage.getItem("users") || "{}");
-  } catch {
-    return {};
-  }
-}
-function saveUsers(users) {
-  localStorage.setItem("users", JSON.stringify(users));
-}
-
-function handleSignUp() {
+async function handleSignUp() {
   error.value = "";
   message.value = "";
-  if (!username.value || !password.value) {
-    error.value = "Username and password are required.";
+  if (!email.value || !password.value) {
+    error.value = "Email and password are required.";
     return;
   }
   if (password.value !== confirmPassword.value) {
     error.value = "Passwords do not match.";
     return;
   }
-  const users = loadUsers();
-  if (users[username.value]) {
-    error.value = "Username already exists.";
+  if (password.value.length < 6) {
+    error.value = "Password must be at least 6 characters.";
     return;
   }
-<<<<<<< Updated upstream
-  users[username.value] = { password: password.value };
-  saveUsers(users);
-  message.value = "Account created. You can now log in.";
-=======
 
   loading.value = true;
 
@@ -150,11 +127,14 @@ function handleSignUp() {
     return;
   }
 
-  // Create starter rows tied to the new auth user
   const uid = data.user.id;
-  const { error: userDataError } = await supabase
-    .from("user_data")
-    .insert({ id: uid, balance: 100, xp: 0, total_amount_gambled: 0 });
+  const { error: userDataError } = await supabase.from("user_data").insert({
+    id: uid,
+    user_email: email.value,
+    balance: 100,
+    xp: 0,
+    total_amount_gambled: 0,
+  });
 
   if (userDataError) {
     error.value =
@@ -169,43 +149,31 @@ function handleSignUp() {
 
   loading.value = false;
   message.value = "Account created! You can now sign in.";
->>>>>>> Stashed changes
   mode.value = "login";
   password.value = "";
   confirmPassword.value = "";
 }
 
-function handleLogin() {
+async function handleLogin() {
   error.value = "";
   message.value = "";
-  const users = loadUsers();
-  const u = users[username.value];
-  if (!u || u.password !== password.value) {
-    error.value = "Invalid username or password.";
+  if (!email.value || !password.value) {
+    error.value = "Email and password are required.";
     return;
   }
-<<<<<<< Updated upstream
-  message.value = `Welcome, ${username.value}!`;
-  localStorage.setItem("sessionUser", username.value);
-=======
 
   loading.value = true;
-
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value,
   });
-
   loading.value = false;
 
   if (signInError) {
     error.value = "Invalid email or password.";
     return;
   }
-
-  // Redirect to game page on successful login
   router.push("/game");
->>>>>>> Stashed changes
 }
 </script>
 
@@ -220,8 +188,6 @@ function handleLogin() {
     transform: translateY(0);
   }
 }
-
-/* Container */
 .auth-container {
   min-height: 100vh;
   background: linear-gradient(to bottom right, #f0f9ff, #e0e7ff);
@@ -230,8 +196,6 @@ function handleLogin() {
   justify-content: center;
   padding: 1.5rem;
 }
-
-/* Card */
 .auth-card {
   width: 100%;
   max-width: 28rem;
@@ -241,25 +205,19 @@ function handleLogin() {
   padding: 2rem;
   border: 1px solid #e5e7eb;
 }
-
-/* Header */
 .auth-header {
   text-align: center;
   margin-bottom: 2rem;
 }
-
 .auth-title {
   font-size: 1.875rem;
   font-weight: bold;
   color: #111827;
   margin-bottom: 0.5rem;
 }
-
 .auth-subtitle {
   color: #6b7280;
 }
-
-/* Tabs */
 .tab-group {
   display: flex;
   gap: 0.5rem;
@@ -268,7 +226,6 @@ function handleLogin() {
   padding: 0.25rem;
   border-radius: 0.5rem;
 }
-
 .tab-button {
   flex: 1;
   padding: 0.5rem;
@@ -280,29 +237,23 @@ function handleLogin() {
   border: none;
   cursor: pointer;
 }
-
 .tab-button:hover {
   color: #111827;
 }
-
 .tab-button.tab-active {
   background-color: white;
   color: #2563eb;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
-
-/* Form */
 .auth-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
 .form-group {
   display: flex;
   flex-direction: column;
 }
-
 .form-label {
   display: block;
   font-size: 0.875rem;
@@ -310,7 +261,6 @@ function handleLogin() {
   color: #374151;
   margin-bottom: 0.5rem;
 }
-
 .form-input {
   width: 100%;
   padding: 0.625rem 1rem;
@@ -319,25 +269,20 @@ function handleLogin() {
   font-size: 1rem;
   transition: all 0.2s;
 }
-
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-
 .form-input::placeholder {
   color: #9ca3af;
 }
-
-/* Messages */
 .message-container {
   min-height: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-
 .message {
   font-size: 0.875rem;
   font-weight: 500;
@@ -345,16 +290,12 @@ function handleLogin() {
   align-items: center;
   gap: 0.25rem;
 }
-
 .message-error {
   color: #dc2626;
 }
-
 .message-success {
   color: #16a34a;
 }
-
-/* Button */
 .submit-button {
   width: 100%;
   padding: 0.625rem;
@@ -367,18 +308,17 @@ function handleLogin() {
   transition: all 0.2s;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
-
-.submit-button:hover {
+.submit-button:hover:not(:disabled) {
   background: linear-gradient(to right, #1d4ed8, #4338ca);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
-
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .submit-button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
-
-/* Footer */
 .auth-footer {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
@@ -387,16 +327,9 @@ function handleLogin() {
   font-size: 0.75rem;
   color: #6b7280;
 }
-
 .auth-footer p {
   margin: 0;
 }
-
-.auth-footer p + p {
-  margin-top: 0.25rem;
-}
-
-/* Animations */
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
