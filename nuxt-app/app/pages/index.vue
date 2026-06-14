@@ -29,12 +29,16 @@
         @submit.prevent="mode === 'login' ? handleLogin() : handleSignUp()"
         class="auth-form"
       >
+<<<<<<< Updated upstream
+=======
+        <!-- Email Field -->
+>>>>>>> Stashed changes
         <div class="form-group">
-          <label class="form-label">Username</label>
+          <label class="form-label">Email</label>
           <input
-            v-model="username"
-            type="text"
-            placeholder="Enter your username"
+            v-model="email"
+            type="email"
+            placeholder="Enter your email"
             class="form-input"
           />
         </div>
@@ -79,28 +83,53 @@
           </div>
         </div>
 
+<<<<<<< Updated upstream
         <button type="submit" class="submit-button">
           {{ mode === "login" ? "Sign In" : "Create Account" }}
         </button>
       </form>
 
       <div class="auth-footer"></div>
+=======
+        <!-- Submit Button -->
+        <button type="submit" class="submit-button" :disabled="loading">
+          {{
+            loading
+              ? "Please wait..."
+              : mode === "login"
+                ? "Sign In"
+                : "Create Account"
+          }}
+        </button>
+      </form>
+
+      <!-- Footer -->
+      <div class="auth-footer">
+        <p>Auth powered by Supabase.</p>
+      </div>
+>>>>>>> Stashed changes
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { supabase } from "../supabaseClient"; // adjust path if needed
+
+const router = useRouter();
 
 const supabase = useSupabaseClient();
 
 const mode = ref("login");
-const username = ref("");
+const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
 const error = ref("");
 const message = ref("");
+const loading = ref(false);
 
+<<<<<<< Updated upstream
 // Modal state
 const showModal = ref(false);
 const modalMessage = ref("");
@@ -118,6 +147,14 @@ async function handleSignUp() {
     modalMessage.value = error.value;
     modalType.value = "error";
     showModal.value = true;
+=======
+async function handleSignUp() {
+  error.value = "";
+  message.value = "";
+
+  if (!email.value || !password.value) {
+    error.value = "Email and password are required.";
+>>>>>>> Stashed changes
     return;
   }
   if (password.value !== confirmPassword.value) {
@@ -127,6 +164,7 @@ async function handleSignUp() {
     showModal.value = true;
     return;
   }
+<<<<<<< Updated upstream
 
   const email = usernameToEmail(username.value);
   const { data, error: supError } = await supabase.auth.signUp({
@@ -145,6 +183,45 @@ async function handleSignUp() {
     "Account created. Check your email to confirm (if required).";
   modalType.value = "success";
   showModal.value = true;
+=======
+  if (password.value.length < 6) {
+    error.value = "Password must be at least 6 characters.";
+    return;
+  }
+
+  loading.value = true;
+
+  const { data, error: signUpError } = await supabase.auth.signUp({
+    email: email.value,
+    password: password.value,
+  });
+
+  if (signUpError) {
+    error.value = signUpError.message;
+    loading.value = false;
+    return;
+  }
+
+  // Create starter rows tied to the new auth user
+  const uid = data.user.id;
+  const { error: userDataError } = await supabase
+    .from("user_data")
+    .insert({ id: uid, balance: 100, xp: 0, total_amount_gambled: 0 });
+
+  if (userDataError) {
+    error.value =
+      "Account created but profile setup failed: " + userDataError.message;
+    loading.value = false;
+    return;
+  }
+
+  await supabase
+    .from("misc")
+    .insert({ user_id: uid, xp: 0, level: 1, rakeback_balance: 0 });
+
+  loading.value = false;
+  message.value = "Account created! You can now sign in.";
+>>>>>>> Stashed changes
   mode.value = "login";
   password.value = "";
   confirmPassword.value = "";
@@ -153,6 +230,7 @@ async function handleSignUp() {
 async function handleLogin() {
   error.value = "";
   message.value = "";
+<<<<<<< Updated upstream
   if (!username.value || !password.value) {
     error.value = "Username and password are required.";
     modalMessage.value = error.value;
@@ -183,6 +261,30 @@ async function handleLogin() {
 function closeModal() {
   showModal.value = false;
   modalMessage.value = "";
+=======
+
+  if (!email.value || !password.value) {
+    error.value = "Email and password are required.";
+    return;
+  }
+
+  loading.value = true;
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value,
+  });
+
+  loading.value = false;
+
+  if (signInError) {
+    error.value = "Invalid email or password.";
+    return;
+  }
+
+  // Redirect to game page on successful login
+  router.push("/game");
+>>>>>>> Stashed changes
 }
 </script>
 
@@ -197,8 +299,6 @@ function closeModal() {
     transform: translateY(0);
   }
 }
-
-/* Container */
 .auth-container {
   min-height: 100vh;
   background: linear-gradient(to bottom right, #f0f9ff, #e0e7ff);
@@ -207,8 +307,6 @@ function closeModal() {
   justify-content: center;
   padding: 1.5rem;
 }
-
-/* Card */
 .auth-card {
   width: 100%;
   max-width: 28rem;
@@ -218,25 +316,19 @@ function closeModal() {
   padding: 2rem;
   border: 1px solid #e5e7eb;
 }
-
-/* Header */
 .auth-header {
   text-align: center;
   margin-bottom: 2rem;
 }
-
 .auth-title {
   font-size: 1.875rem;
   font-weight: bold;
   color: #111827;
   margin-bottom: 0.5rem;
 }
-
 .auth-subtitle {
   color: #6b7280;
 }
-
-/* Tabs */
 .tab-group {
   display: flex;
   gap: 0.5rem;
@@ -245,7 +337,6 @@ function closeModal() {
   padding: 0.25rem;
   border-radius: 0.5rem;
 }
-
 .tab-button {
   flex: 1;
   padding: 0.5rem;
@@ -257,29 +348,23 @@ function closeModal() {
   border: none;
   cursor: pointer;
 }
-
 .tab-button:hover {
   color: #111827;
 }
-
 .tab-button.tab-active {
   background-color: white;
   color: #2563eb;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
-
-/* Form */
 .auth-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
-
 .form-group {
   display: flex;
   flex-direction: column;
 }
-
 .form-label {
   display: block;
   font-size: 0.875rem;
@@ -287,7 +372,6 @@ function closeModal() {
   color: #374151;
   margin-bottom: 0.5rem;
 }
-
 .form-input {
   width: 100%;
   padding: 0.625rem 1rem;
@@ -296,25 +380,20 @@ function closeModal() {
   font-size: 1rem;
   transition: all 0.2s;
 }
-
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
-
 .form-input::placeholder {
   color: #9ca3af;
 }
-
-/* Messages */
 .message-container {
   min-height: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-
 .message {
   font-size: 0.875rem;
   font-weight: 500;
@@ -322,16 +401,12 @@ function closeModal() {
   align-items: center;
   gap: 0.25rem;
 }
-
 .message-error {
   color: #dc2626;
 }
-
 .message-success {
   color: #16a34a;
 }
-
-/* Button */
 .submit-button {
   width: 100%;
   padding: 0.625rem;
@@ -344,18 +419,18 @@ function closeModal() {
   transition: all 0.2s;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
-
-.submit-button:hover {
+.submit-button:hover:not(:disabled) {
   background: linear-gradient(to right, #1d4ed8, #4338ca);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
-
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .submit-button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
-
-/* Footer */
 .auth-footer {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
@@ -364,16 +439,12 @@ function closeModal() {
   font-size: 0.75rem;
   color: #6b7280;
 }
-
 .auth-footer p {
   margin: 0;
 }
-
 .auth-footer p + p {
   margin-top: 0.25rem;
 }
-
-/* Animations */
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
