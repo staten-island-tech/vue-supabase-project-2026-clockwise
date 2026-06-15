@@ -128,8 +128,12 @@
         <input type="number" v-model.number="autoCashout" min="1" step="0.01"
           :disabled="gameRunning || !countdownRunning" class="control-input" placeholder="e.g. 2.00" />
       </div>
-      <button class="action-btn" :class="betActive ? 'cashout' : 'place'" @click="onPlayButton"
-        :disabled="placingBetDisabled || (betActive && !canCashout) || (!countdownRunning && !betActive) || (gameRunning && !betActive)">
+      <button
+        class="action-btn"
+        :class="betActive ? 'cashout' : 'place'"
+        @click="onPlayButton"
+        :disabled="placingBetDisabled || (betActive && !canCashout) || (!countdownRunning && !betActive) || (gameRunning && !betActive)"
+      >
         {{ betActive ? "💸 Cashout" : "🎲 Place Bet" }}
       </button>
     </div>
@@ -142,72 +146,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { supabase } from "../lib/supabase";
 import { useRouter } from "vue-router";
 
 definePageMeta({ middleware: "auth" });
 
-async function ensureUserRecords() {
-  if (!currentUser) return;
-
-  // user_data row
-  const { data: userRow, error: userRowError } = await supabase
-    .from("user_data")
-    .select("id")
-    .eq("id", currentUser.id)
-    .maybeSingle();
-
-  if (userRowError) {
-    console.error("user_data lookup error:", userRowError);
-  }
-
-  if (!userRow) {
-    const { error } = await supabase.from("user_data").insert({
-      id: currentUser.id,
-      user_email: currentUser.email,
-      balance: 100,
-      xp: 0,
-      total_amount_gambled: 0,
-    });
-
-    if (error) {
-      console.error("user_data insert error:", error);
-    } else {
-      console.log("Created user_data row");
-    }
-  }
-
-  // misc row
-  const { data: miscRow, error: miscRowError } = await supabase
-    .from("misc")
-    .select("user_id")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
-
-  if (miscRowError) {
-    console.error("misc lookup error:", miscRowError);
-  }
-
-  if (!miscRow) {
-    const { error } = await supabase.from("misc").insert({
-      user_id: currentUser.id,
-      xp: 0,
-      level: 1,
-    });
-
-    if (error) {
-      console.error("misc insert error:", error);
-    } else {
-      console.log("Created misc row");
-    }
-  }
-}
 const router = useRouter();
+
 const INITIAL_COUNT = 10;
 const counter = ref(INITIAL_COUNT);
 const x = ref(1);
-let y = 0;
+
 let countdownTimer = null;
 let gameTimer = null;
 
@@ -218,15 +168,19 @@ const betInput = ref(null);
 const currentBet = ref(0);
 const betActive = ref(false);
 const canCashout = ref(true);
+
 const message = ref("");
-const placingBetDisabled = ref(false);
+
 const countdownRunning = ref(false);
 const gameRunning = ref(false);
+
 const autoCashout = ref(null);
+
 const showProfile = ref(false);
 const showBets = ref(false);
 
 const userMisc = ref({ level: 1, xp: 0 });
+
 const totalWagered = ref(0);
 const pastBets = ref([]);
 const recentRounds = ref([]);
@@ -234,6 +188,16 @@ const recentRounds = ref([]);
 let currentUser = null;
 let currentGameId = null;
 let currentBetId = null;
+
+/* ---------------- COMPUTED ---------------- */
+
+const placingBetDisabled = computed(() => {
+  if (betActive.value) return false; // allow cashout
+  const amount = Number(betInput.value || 0);
+  return !amount || amount <= 0 || amount > starterMoney.value;
+});
+
+/* ---------------- HELPERS ---------------- */
 
 function pillColor(val) {
   if (!val) return "pill-grey";
@@ -247,107 +211,82 @@ function formatTime(ts) {
   return new Date(ts).toLocaleTimeString();
 }
 
+function toggleProfile() {
+  showProfile.value = !showProfile.value;
+  if (showProfile.value) showBets.value = false;
+}
+
+function toggleBets() {
+  showBets.value = !showBets.value;
+  if (showBets.value) showProfile.value = false;
+}
+
 async function logout() {
   await supabase.auth.signOut();
-  router.push("/");
+  router.push("/login");
 }
 
-async function toggleProfile() {
-  showProfile.value = !showProfile.value;
-  if (showProfile.value) {
-    showBets.value = false;
-    await loadPastBets();
-  }
-}
-
-async function toggleBets() {
-  showBets.value = !showBets.value;
-  if (showBets.value) {
-    showProfile.value = false;
-    await loadPastBets();
-  }
-}
+/* ---------------- LOAD DATA ---------------- */
 
 async function loadUserData() {
   const [{ data: ud }, { data: misc }] = await Promise.all([
-    supabase.from("user_data").select("balance, total_amount_gambled").eq("id", currentUser.id).maybeSingle(),
-    supabase.from("misc").select("level, xp").eq("user_id", currentUser.id).maybeSingle(),
+    supabase
+      .from("user_data")
+      .select("balance, total_amount_gambled")
+      .eq("id", currentUser.id)
+      .maybeSingle(),
+
+    supabase
+      .from("misc")
+      .select("level, xp")
+      .eq("user_id", currentUser.id)
+      .maybeSingle(),
   ]);
+
   if (ud) {
     starterMoney.value = Number(ud.balance) || 100;
     totalWagered.value = Number(ud.total_amount_gambled) || 0;
   }
-  if (misc) userMisc.value = { level: misc.level || 1, xp: misc.xp || 0 };
+
+  if (misc) {
+    userMisc.value = misc;
+  }
 }
 
 async function loadPastBets() {
-  const { data } = await supabase.from("user_bets").select("*")
-    .eq("user_id", currentUser.id).order("bet_time", { ascending: false }).limit(20);
-  if (data) pastBets.value = data;
+  const { data } = await supabase
+    .from("user_bets")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .order("bet_time", { ascending: false });
+
+  pastBets.value = data || [];
 }
 
-async function loadRecentRounds() {
-  const { data } = await supabase.from(GAME_TABLE).select("id, crash_point")
-    .not("crash_point", "is", null).order("created_at", { ascending: false }).limit(5);
-  if (data) recentRounds.value = data;
-}
+/* ---------------- BALANCE ---------------- */
 
 async function saveBalance(newBalance) {
-  console.log("Saving balance...");
-  console.log("Auth User ID:", currentUser?.id);
-
-  const { data, error } = await supabase
+  await supabase
     .from("user_data")
     .update({ balance: newBalance })
-    .eq("id", currentUser.id)
-    .select();
-
-  console.log("Update result:", data);
-  console.log("Update error:", error);
+    .eq("id", currentUser.id);
 }
 
-async function createGameRound() {
-  const { data, error } = await supabase.from(GAME_TABLE)
-    .insert({ created_at: new Date().toISOString() }).select().single();
-  if (error) { console.error("createGameRound error:", error.message); return; }
-  if (data) currentGameId = data.id;
-}
-
-async function endGameRound(crashPoint) {
-  if (!currentGameId) return;
-  const { error } = await supabase.from(GAME_TABLE)
-    .update({ crash_point: crashPoint, ended_at: new Date().toISOString() }).eq("id", currentGameId);
-  if (error) console.error("endGameRound error:", error.message);
-  currentGameId = null;
-  await loadRecentRounds();
-}
-
-async function saveCrashProperties(crashPoint) {
-  const { error } = await supabase.from("crash_properties")
-    .insert({ start_time: new Date().toISOString(), crash_id: crashPoint });
-  if (error) console.error("saveCrashProperties error:", error.message);
-}
+/* ---------------- BET LOGIC ---------------- */
 
 async function placeBetDB(amount) {
   if (!currentUser || !currentGameId) return;
 
-  // STEP 1: ALWAYS pull from DB
-  const { data: userData } = await supabase
+  // 1. Get fresh DB value
+  const { data: row } = await supabase
     .from("user_data")
     .select("total_amount_gambled")
     .eq("id", currentUser.id)
     .maybeSingle();
 
-  const currentTotal = Number(userData?.total_amount_gambled || 0);
+  const currentTotal = Number(row?.total_amount_gambled || 0);
 
-  // STEP 2: safe calculation
-  const newTotal = currentTotal + amount;
-
-  console.log("CURRENT TOTAL:", currentTotal);
-  console.log("ADDING AMOUNT:", amount);
-  console.log("NEW TOTAL:", newTotal);
-
-  // STEP 3: insert bet
+  // 2. Insert bet
   const { data, error } = await supabase
     .from("user_bets")
     .insert({
@@ -367,143 +306,146 @@ async function placeBetDB(amount) {
 
   currentBetId = data.id;
 
-  // STEP 4: update DB
-  const { data: updated, error: updateError } = await supabase
+  // 3. Update total wagered
+  const newTotal = currentTotal + amount;
+
+  const { error: updateError } = await supabase
     .from("user_data")
     .update({ total_amount_gambled: newTotal })
-    .eq("id", currentUser.id)
-    .select();
+    .eq("id", currentUser.id);
 
-  console.log("UPDATE RESULT:", updated);
-  console.log("UPDATE ERROR:", updateError);
+  if (updateError) {
+    console.error("wager update error:", updateError);
+  }
 
-  totalWagered.value += newTotal;
+  totalWagered.value = newTotal;
 }
-async function updateXPAndLevel() {
-  const { data: misc, error } = await supabase.from("misc")
-    .select("xp, level").eq("user_id", currentUser.id).maybeSingle();
-  if (error || !misc) { console.error("updateXPAndLevel: no misc row", error?.message); return; }
 
-  const newXP = (misc.xp || 0) + 1;
-  const newLevel = Math.floor(newXP / 3) + 1;
-
-  await supabase.from("misc").update({ xp: newXP, level: newLevel }).eq("user_id", currentUser.id);
-  userMisc.value = { xp: newXP, level: newLevel };
-}
+/* ---------------- CASHOUT ---------------- */
 
 async function resolveBetDB(status, cashoutResult = null) {
   if (!currentBetId) return;
-  await supabase.from("user_bets")
-    .update({ status, cashout_result: cashoutResult }).eq("id", currentBetId);
+
+  await supabase
+    .from("user_bets")
+    .update({ status, cashout_result: cashoutResult })
+    .eq("id", currentBetId);
+
   currentBetId = null;
-  if (status === "won") await updateXPAndLevel();
-  if (showBets.value || showProfile.value) await loadPastBets();
 }
 
 async function performCashout() {
-  if (!betActive.value || !canCashout.value) return false;
+  if (!betActive.value) return;
+
   const reward = currentBet.value * x.value;
+
   starterMoney.value += reward;
-  message.value = `Cashed out: $${reward.toFixed(2)}`;
+
   await resolveBetDB("won", reward);
   await saveBalance(starterMoney.value);
+  await loadPastBets();
+
   currentBet.value = 0;
   betActive.value = false;
-  canCashout.value = true;
-  return true;
+
+  message.value = `Cashed out: $${reward.toFixed(2)}`;
 }
 
+/* ---------------- GAME ---------------- */
+
 async function startGame() {
-  if (gameTimer) { clearInterval(gameTimer); gameTimer = null; }
   gameRunning.value = true;
   countdownRunning.value = false;
   x.value = 1;
-  await createGameRound();
+  message.value = "";
 
-  if (!currentGameId) {
-    console.error("startGame: no game ID — aborting");
-    gameRunning.value = false;
-    startCountdown();
-    return;
-  }
+  const { data } = await supabase
+    .from(GAME_TABLE)
+    .insert({ created_at: new Date().toISOString() })
+    .select()
+    .single();
+
+  currentGameId = data?.id;
 
   gameTimer = setInterval(async () => {
-    y = Math.random() * 10;
-    if (y <= 9.889) {
+    const crash = Math.random() > 0.98;
+
+    if (!crash) {
       x.value = +(x.value + 0.01).toFixed(2);
-      const target = Number(autoCashout.value) || 0;
-      if (betActive.value && canCashout.value && target > 0 && x.value >= target) {
+
+      const target = Number(autoCashout.value || 0);
+      if (betActive.value && target && x.value >= target) {
         await performCashout();
       }
     } else {
       clearInterval(gameTimer);
-      gameTimer = null;
       gameRunning.value = false;
-      await endGameRound(x.value);
-      await saveCrashProperties(x.value);
+
       if (betActive.value) {
-        canCashout.value = false;
-        betActive.value = false;
-        message.value = "Game crashed — bet lost.";
         await resolveBetDB("lost", 0);
-        await saveBalance(starterMoney.value);
+        await loadPastBets();
+        message.value = "Crashed — you lost";
+        betActive.value = false;
         currentBet.value = 0;
       }
+
       startCountdown();
     }
   }, 100);
 }
 
+/* ---------------- COUNTDOWN ---------------- */
+
 function startCountdown() {
-  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
   counter.value = INITIAL_COUNT;
-  x.value = 1;
-  if (gameTimer) { clearInterval(gameTimer); gameTimer = null; }
   countdownRunning.value = true;
-  gameRunning.value = false;
+
   countdownTimer = setInterval(() => {
-    if (counter.value > 0) counter.value -= 1;
+    counter.value--;
+
     if (counter.value <= 0) {
       clearInterval(countdownTimer);
-      countdownTimer = null;
-      counter.value = 0;
       countdownRunning.value = false;
       startGame();
     }
   }, 1000);
 }
 
+/* ---------------- BET BUTTON ---------------- */
+
 async function onPlayButton() {
-  message.value = "";
+  const amount = Number(betInput.value || 0);
+
   if (!betActive.value) {
-    if (!countdownRunning.value || gameRunning.value) { message.value = "Betting is closed for this round."; return; }
-    const amount = Number(betInput.value) || 0;
-    if (amount <= 0) { message.value = "Enter a valid bet amount."; return; }
-    if (amount > starterMoney.value) { message.value = "Not enough money."; return; }
+    if (!amount || amount <= 0 || amount > starterMoney.value) return;
+
     starterMoney.value -= amount;
     currentBet.value = amount;
     betActive.value = true;
-    canCashout.value = true;
-    message.value = "Bet placed. Press Cashout to collect before crash.";
+
     await saveBalance(starterMoney.value);
     await placeBetDB(amount);
     return;
   }
-  if (betActive.value && canCashout.value) { await performCashout(); return; }
-  if (!canCashout.value) message.value = "Unable to cash out — the round already crashed.";
+
+  await performCashout();
 }
 
+/* ---------------- INIT ---------------- */
+
 onMounted(async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  currentUser = user;
+  const { data } = await supabase.auth.getUser();
+  currentUser = data.user;
+
   await loadUserData();
-  await loadRecentRounds();
+  await loadPastBets();
+
   startCountdown();
 });
 
 onUnmounted(() => {
-  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-  if (gameTimer) { clearInterval(gameTimer); gameTimer = null; }
+  clearInterval(gameTimer);
+  clearInterval(countdownTimer);
 });
 </script>
 
