@@ -1,0 +1,4 @@
+[build]
+  base = "nuxt-app"
+  command = "npm run build"
+  publish = "nuxt-app/.output/public"
