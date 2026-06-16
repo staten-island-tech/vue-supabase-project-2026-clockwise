@@ -8,9 +8,9 @@
             v-for="round in recentRounds"
             :key="round.id"
             class="pill"
-            :class="pillColor(round.crash_point)"
+            :class="pillColor(round.crash_id)"
           >
-            {{ round.crash_point ? round.crash_point.toFixed(2) + "x" : "—" }}
+            {{ round.crash_id ? round.crash_id.toFixed(2) + "x" : "—" }}
           </span>
         </div>
       </div>
@@ -34,12 +34,8 @@
           <span class="stat-value">${{ starterMoney.toFixed(2) }}</span>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Level</span>
-          <span class="stat-value">{{ userMisc.level }}</span>
-        </div>
-        <div class="stat-card">
           <span class="stat-label">XP</span>
-          <span class="stat-value">{{ userMisc.xp }}</span>
+          <span class="stat-value">{{ xp }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-label">Total Wagered</span>
@@ -55,7 +51,7 @@
             <tr>
               <th>Time</th>
               <th>Bet</th>
-              <th>Cashout</th>
+              <th>Crash At</th>
               <th>Result</th>
             </tr>
           </thead>
@@ -63,10 +59,20 @@
             <tr v-for="bet in pastBets" :key="bet.id">
               <td>{{ formatTime(bet.bet_time) }}</td>
               <td>${{ Number(bet.amount).toFixed(2) }}</td>
-              <td>{{ bet.cashout_result ? "$" + Number(bet.cashout_result).toFixed(2) : "—" }}</td>
+              <td>
+                {{
+                  bet.cashout_result ? bet.cashout_result.toFixed(2) + "x" : "—"
+                }}
+              </td>
               <td>
                 <span class="status-badge" :class="bet.status">
-                  {{ bet.status === "won" ? "✓ Won" : bet.status === "lost" ? "✗ Lost" : "..." }}
+                  {{
+                    bet.status === "won"
+                      ? "✓ Won"
+                      : bet.status === "lost"
+                        ? "✗ Lost"
+                        : "..."
+                  }}
                 </span>
               </td>
             </tr>
@@ -88,7 +94,7 @@
             <tr>
               <th>Time</th>
               <th>Amount</th>
-              <th>Cashout</th>
+              <th>Crash At</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -96,10 +102,20 @@
             <tr v-for="bet in pastBets" :key="bet.id">
               <td>{{ formatTime(bet.bet_time) }}</td>
               <td>${{ Number(bet.amount).toFixed(2) }}</td>
-              <td>{{ bet.cashout_result ? "$" + Number(bet.cashout_result).toFixed(2) : "—" }}</td>
+              <td>
+                {{
+                  bet.cashout_result ? bet.cashout_result.toFixed(2) + "x" : "—"
+                }}
+              </td>
               <td>
                 <span class="status-badge" :class="bet.status">
-                  {{ bet.status === "won" ? "✓ Won" : bet.status === "lost" ? "✗ Lost" : "..." }}
+                  {{
+                    bet.status === "won"
+                      ? "✓ Won"
+                      : bet.status === "lost"
+                        ? "✗ Lost"
+                        : "..."
+                  }}
                 </span>
               </td>
             </tr>
@@ -110,8 +126,17 @@
 
     <!-- Game area -->
     <div class="game-area">
-      <div class="multiplier-display" :class="{ crashed: !gameRunning && !countdownRunning }">
-        {{ gameRunning || betActive ? x.toFixed(2) + "x" : countdownRunning ? "Starting in " + counter + "s" : "Crashed" }}
+      <div
+        class="multiplier-display"
+        :class="{ crashed: !gameRunning && !countdownRunning }"
+      >
+        {{
+          gameRunning || betActive
+            ? x.toFixed(2) + "x"
+            : countdownRunning
+              ? "Starting in " + counter + "s"
+              : "Crashed"
+        }}
       </div>
       <p class="multiplier-sub" v-if="gameRunning">Current payout</p>
     </div>
@@ -120,26 +145,52 @@
     <div class="controls">
       <div class="control-group">
         <label class="control-label">Bet Amount</label>
-        <input type="number" v-model.number="betInput" min="0" step="0.01"
-          :disabled="gameRunning || !countdownRunning" class="control-input" placeholder="0.00" />
+        <input
+          type="number"
+          v-model.number="betInput"
+          min="0"
+          step="0.01"
+          :disabled="gameRunning || !countdownRunning"
+          class="control-input"
+          placeholder="0.00"
+        />
       </div>
       <div class="control-group">
         <label class="control-label">Auto Cashout</label>
-        <input type="number" v-model.number="autoCashout" min="1" step="0.01"
-          :disabled="gameRunning || !countdownRunning" class="control-input" placeholder="e.g. 2.00" />
+        <input
+          type="number"
+          v-model.number="autoCashout"
+          min="1"
+          step="0.01"
+          :disabled="gameRunning || !countdownRunning"
+          class="control-input"
+          placeholder="e.g. 2.00"
+        />
       </div>
       <button
         class="action-btn"
         :class="betActive ? 'cashout' : 'place'"
         @click="onPlayButton"
-        :disabled="placingBetDisabled || (betActive && !canCashout) || (!countdownRunning && !betActive) || (gameRunning && !betActive)"
+        :disabled="
+          placingBetDisabled ||
+          (betActive && !canCashout) ||
+          (!countdownRunning && !betActive) ||
+          (gameRunning && !betActive)
+        "
       >
         {{ betActive ? "💸 Cashout" : "🎲 Place Bet" }}
       </button>
     </div>
 
-    <div v-if="message" class="message"
-      :class="message.includes('crashed') || message.includes('lost') ? 'msg-loss' : 'msg-win'">
+    <div
+      v-if="message"
+      class="message"
+      :class="
+        message.includes('crashed') || message.includes('lost')
+          ? 'msg-loss'
+          : 'msg-win'
+      "
+    >
       {{ message }}
     </div>
   </div>
@@ -162,6 +213,7 @@ let countdownTimer = null;
 let gameTimer = null;
 
 const GAME_TABLE = "THEY CALL IT THE GAME";
+const CRASH_TABLE = "crash_properties";
 
 const starterMoney = ref(100);
 const betInput = ref(null);
@@ -179,20 +231,20 @@ const autoCashout = ref(null);
 const showProfile = ref(false);
 const showBets = ref(false);
 
-const userMisc = ref({ level: 1, xp: 0 });
-
+const xp = ref(0);
 const totalWagered = ref(0);
 const pastBets = ref([]);
 const recentRounds = ref([]);
 
-let currentUser = null;
+let currentUser = ref(null);
 let currentGameId = null;
+let currentCrashId = null;
 let currentBetId = null;
 
 /* ---------------- COMPUTED ---------------- */
 
 const placingBetDisabled = computed(() => {
-  if (betActive.value) return false; // allow cashout
+  if (betActive.value) return false;
   const amount = Number(betInput.value || 0);
   return !amount || amount <= 0 || amount > starterMoney.value;
 });
@@ -229,95 +281,111 @@ async function logout() {
 /* ---------------- LOAD DATA ---------------- */
 
 async function loadUserData() {
-  const [{ data: ud }, { data: misc }] = await Promise.all([
-    supabase
-      .from("user_data")
-      .select("balance, total_amount_gambled")
-      .eq("id", currentUser.id)
-      .maybeSingle(),
+  const { data: ud, error } = await supabase
+    .from("user_data")
+    .select("balance, total_amount_gambled, xp")
+    .eq("id", currentUser.value.id)
+    .maybeSingle();
 
-    supabase
-      .from("misc")
-      .select("level, xp")
-      .eq("user_id", currentUser.id)
-      .maybeSingle(),
-  ]);
+  if (error) {
+    console.error("loadUserData error:", error);
+    return;
+  }
 
   if (ud) {
     starterMoney.value = Number(ud.balance) || 100;
     totalWagered.value = Number(ud.total_amount_gambled) || 0;
-  }
-
-  if (misc) {
-    userMisc.value = misc;
+    xp.value = Number(ud.xp) || 0;
   }
 }
 
 async function loadPastBets() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("user_bets")
     .select("*")
-    .eq("user_id", currentUser.id)
-    .order("bet_time", { ascending: false });
+    .eq("user_id", currentUser.value.id)
+    .order("bet_time", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("loadPastBets error:", error);
+    return;
+  }
 
   pastBets.value = data || [];
 }
 
-/* ---------------- BALANCE ---------------- */
+async function loadRecentRounds() {
+  const { data, error } = await supabase
+    .from(CRASH_TABLE)
+    .select("id, crash_id")
+    .not("crash_id", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(10);
 
-async function saveBalance(newBalance) {
-  await supabase
+  if (error) {
+    console.error("loadRecentRounds error:", error);
+    return;
+  }
+
+  recentRounds.value = (data || []).reverse();
+}
+
+/* ---------------- BALANCE + XP ---------------- */
+
+async function saveUserData(newBalance, newXp, newWagered) {
+  const updates = {};
+  if (newBalance !== undefined) updates.balance = newBalance;
+  if (newXp !== undefined) updates.xp = newXp;
+  if (newWagered !== undefined) updates.total_amount_gambled = newWagered;
+
+  const { error } = await supabase
     .from("user_data")
-    .update({ balance: newBalance })
-    .eq("id", currentUser.id);
+    .update(updates)
+    .eq("id", currentUser.value.id);
+
+  if (error) console.error("saveUserData error:", error);
 }
 
 /* ---------------- BET LOGIC ---------------- */
 
 async function placeBetDB(amount) {
-  if (!currentUser || !currentGameId) return;
+  if (!currentUser.value) return;
 
-  // 1. Get fresh DB value
-  const { data: row } = await supabase
+  // Re-fetch current total_amount_gambled fresh from DB to avoid stale reads
+  const { data: row, error: fetchError } = await supabase
     .from("user_data")
     .select("total_amount_gambled")
-    .eq("id", currentUser.id)
-    .maybeSingle();
-
-  const currentTotal = Number(row?.total_amount_gambled || 0);
-
-  // 2. Insert bet
-  const { data, error } = await supabase
-    .from("user_bets")
-    .insert({
-      user_id: currentUser.id,
-      amount,
-      status: "active",
-      cashout_result: 0,
-      bet_time: new Date().toISOString()
-    })
-    .select()
+    .eq("id", currentUser.value.id)
     .single();
 
-  if (error) {
-    console.error("bet insert error:", error);
+  if (fetchError) {
+    console.error("fetch wagered error:", fetchError);
     return;
   }
 
-  currentBetId = data.id;
+  const newTotal = Number(row?.total_amount_gambled || 0) + amount;
 
-  // 3. Update total wagered
-  const newTotal = currentTotal + amount;
+  // Insert bet — no cashout_result on insert since it's nullable now
+  const { data: bet, error: betError } = await supabase
+    .from("user_bets")
+    .insert({
+      user_id: currentUser.value.id,
+      amount,
+      status: "active",
+      bet_time: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
 
-  const { error: updateError } = await supabase
-    .from("user_data")
-    .update({ total_amount_gambled: newTotal })
-    .eq("id", currentUser.id);
-
-  if (updateError) {
-    console.error("wager update error:", updateError);
+  if (betError) {
+    console.error("bet insert error:", betError);
+    return;
   }
 
+  currentBetId = bet.id;
+
+  await saveUserData(undefined, undefined, newTotal);
   totalWagered.value = newTotal;
 }
 
@@ -326,10 +394,12 @@ async function placeBetDB(amount) {
 async function resolveBetDB(status, cashoutResult = null) {
   if (!currentBetId) return;
 
-  await supabase
+  const { error } = await supabase
     .from("user_bets")
     .update({ status, cashout_result: cashoutResult })
     .eq("id", currentBetId);
+
+  if (error) console.error("resolveBetDB error:", error);
 
   currentBetId = null;
 }
@@ -337,18 +407,21 @@ async function resolveBetDB(status, cashoutResult = null) {
 async function performCashout() {
   if (!betActive.value) return;
 
-  const reward = currentBet.value * x.value;
+  const multiplier = x.value;
+  const reward = currentBet.value * multiplier;
+  const newBalance = starterMoney.value + reward;
+  const newXp = xp.value + 1;
 
-  starterMoney.value += reward;
+  starterMoney.value = newBalance;
+  xp.value = newXp;
 
-  await resolveBetDB("won", reward);
-  await saveBalance(starterMoney.value);
+  await resolveBetDB("won", multiplier);
+  await saveUserData(newBalance, newXp, undefined);
   await loadPastBets();
 
   currentBet.value = 0;
   betActive.value = false;
-
-  message.value = `Cashed out: $${reward.toFixed(2)}`;
+  message.value = `Cashed out at ${multiplier.toFixed(2)}x — $${reward.toFixed(2)}`;
 }
 
 /* ---------------- GAME ---------------- */
@@ -359,13 +432,25 @@ async function startGame() {
   x.value = 1;
   message.value = "";
 
-  const { data } = await supabase
+  // Insert row into GAME_TABLE
+  const { data: gameRow, error: gameError } = await supabase
     .from(GAME_TABLE)
     .insert({ created_at: new Date().toISOString() })
     .select()
     .single();
 
-  currentGameId = data?.id;
+  if (gameError) console.error("game insert error:", gameError);
+  currentGameId = gameRow?.id ?? null;
+
+  // Insert a pending crash_properties row (crash_id will be set on crash)
+  const { data: crashRow, error: crashError } = await supabase
+    .from(CRASH_TABLE)
+    .insert({ start_time: new Date().toISOString() })
+    .select("id")
+    .single();
+
+  if (crashError) console.error("crash_properties insert error:", crashError);
+  currentCrashId = crashRow?.id ?? null;
 
   gameTimer = setInterval(async () => {
     const crash = Math.random() > 0.98;
@@ -381,13 +466,29 @@ async function startGame() {
       clearInterval(gameTimer);
       gameRunning.value = false;
 
+      const crashPoint = x.value;
+
+      // Save crash_id (the actual crash multiplier) to crash_properties
+      if (currentCrashId) {
+        const { error } = await supabase
+          .from(CRASH_TABLE)
+          .update({ crash_id: crashPoint })
+          .eq("id", currentCrashId);
+
+        if (error) console.error("crash_properties update error:", error);
+      }
+
       if (betActive.value) {
-        await resolveBetDB("lost", 0);
-        await loadPastBets();
-        message.value = "Crashed — you lost";
+        await resolveBetDB("lost", crashPoint);
+        message.value = `Crashed at ${crashPoint.toFixed(2)}x — you lost`;
         betActive.value = false;
         currentBet.value = 0;
+      } else {
+        message.value = `Crashed at ${crashPoint.toFixed(2)}x`;
       }
+
+      await loadPastBets();
+      await loadRecentRounds();
 
       startCountdown();
     }
@@ -423,7 +524,7 @@ async function onPlayButton() {
     currentBet.value = amount;
     betActive.value = true;
 
-    await saveBalance(starterMoney.value);
+    await saveUserData(starterMoney.value, undefined, undefined);
     await placeBetDB(amount);
     return;
   }
@@ -434,11 +535,18 @@ async function onPlayButton() {
 /* ---------------- INIT ---------------- */
 
 onMounted(async () => {
-  const { data } = await supabase.auth.getUser();
-  currentUser = data.user;
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    router.push("/login");
+    return;
+  }
+
+  currentUser.value = data.user;
 
   await loadUserData();
   await loadPastBets();
+  await loadRecentRounds();
 
   startCountdown();
 });
@@ -450,86 +558,292 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 .game-shell {
-  min-height: 100vh; background: #0f1123; color: #e0e6ff;
-  font-family: "Inter", system-ui, sans-serif; display: flex; flex-direction: column;
+  min-height: 100vh;
+  background: #0f1123;
+  color: #e0e6ff;
+  font-family: "Inter", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
 }
 .top-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 20px; background: #161929; border-bottom: 1px solid #252a45;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #161929;
+  border-bottom: 1px solid #252a45;
 }
-.top-bar-left { display: flex; align-items: center; gap: 12px; }
-.top-bar-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; }
-.crash-pills { display: flex; gap: 6px; }
-.pill { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
-.pill-red { background: #3b1a1a; color: #f87171; }
-.pill-blue { background: #1a2340; color: #60a5fa; }
-.pill-gold { background: #2d2410; color: #fbbf24; }
-.pill-grey { background: #252a45; color: #6b7280; }
-.top-bar-right { display: flex; align-items: center; gap: 12px; }
-.balance-label { font-weight: 700; color: #fbbf24; font-size: 0.95rem; }
-.profile-btn, .logout-btn {
-  padding: 5px 14px; border-radius: 8px; border: none;
-  cursor: pointer; font-size: 0.8rem; font-weight: 600;
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.profile-btn { background: #252a45; color: #e0e6ff; }
-.profile-btn:hover { background: #2e3458; }
-.logout-btn { background: #3b1a1a; color: #f87171; }
-.logout-btn:hover { background: #4c2020; }
+.top-bar-label {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.crash-pills {
+  display: flex;
+  gap: 6px;
+}
+.pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.pill-red {
+  background: #3b1a1a;
+  color: #f87171;
+}
+.pill-blue {
+  background: #1a2340;
+  color: #60a5fa;
+}
+.pill-gold {
+  background: #2d2410;
+  color: #fbbf24;
+}
+.pill-grey {
+  background: #252a45;
+  color: #6b7280;
+}
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.balance-label {
+  font-weight: 700;
+  color: #fbbf24;
+  font-size: 0.95rem;
+}
+.profile-btn,
+.logout-btn {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.profile-btn {
+  background: #252a45;
+  color: #e0e6ff;
+}
+.profile-btn:hover {
+  background: #2e3458;
+}
+.logout-btn {
+  background: #3b1a1a;
+  color: #f87171;
+}
+.logout-btn:hover {
+  background: #4c2020;
+}
 .profile-panel {
-  position: fixed; top: 0; right: 0; width: 380px; height: 100vh;
-  background: #161929; border-left: 1px solid #252a45;
-  z-index: 100; overflow-y: auto; padding: 24px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: #161929;
+  border-left: 1px solid #252a45;
+  z-index: 100;
+  overflow-y: auto;
+  padding: 24px;
 }
-.profile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.profile-header h2 { font-size: 0.95rem; color: #9ca3af; }
-.close-btn { background: none; border: none; color: #6b7280; font-size: 1.2rem; cursor: pointer; }
-.close-btn:hover { color: #e0e6ff; }
-.profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
-.stat-card { background: #0f1123; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
-.stat-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; }
-.stat-value { font-size: 1.3rem; font-weight: 700; color: #fbbf24; }
-.history-title { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
-.no-bets { color: #4b5563; font-size: 0.9rem; }
-.bet-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-.bet-table th { color: #6b7280; text-align: left; padding: 6px 8px; border-bottom: 1px solid #252a45; }
-.bet-table td { padding: 8px; border-bottom: 1px solid #1a1f35; color: #e0e6ff; }
-.status-badge { padding: 2px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-.status-badge.won { background: #14532d; color: #4ade80; }
-.status-badge.lost { background: #3b1a1a; color: #f87171; }
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.profile-header h2 {
+  font-size: 0.95rem;
+  color: #9ca3af;
+}
+.close-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.close-btn:hover {
+  color: #e0e6ff;
+}
+.profile-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: #0f1123;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-label {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+.history-title {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.no-bets {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+.bet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.bet-table th {
+  color: #6b7280;
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #252a45;
+}
+.bet-table td {
+  padding: 8px;
+  border-bottom: 1px solid #1a1f35;
+  color: #e0e6ff;
+}
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.status-badge.won {
+  background: #14532d;
+  color: #4ade80;
+}
+.status-badge.lost {
+  background: #3b1a1a;
+  color: #f87171;
+}
 .game-area {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 8px; padding: 40px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
 }
 .multiplier-display {
-  font-size: clamp(3rem, 10vw, 6rem); font-weight: 900;
-  color: #e0e6ff; letter-spacing: -0.02em; transition: color 0.3s;
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 900;
+  color: #e0e6ff;
+  letter-spacing: -0.02em;
+  transition: color 0.3s;
 }
-.multiplier-display.crashed { color: #f87171; }
-.multiplier-sub { color: #6b7280; font-size: 0.9rem; }
+.multiplier-display.crashed {
+  color: #f87171;
+}
+.multiplier-sub {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
 .controls {
-  display: flex; gap: 12px; align-items: flex-end;
-  padding: 20px; background: #161929; border-top: 1px solid #252a45; flex-wrap: wrap;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 20px;
+  background: #161929;
+  border-top: 1px solid #252a45;
+  flex-wrap: wrap;
 }
-.control-group { display: flex; flex-direction: column; gap: 6px; }
-.control-label { font-size: 0.72rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; }
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.control-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 .control-input {
-  background: #0f1123; border: 1px solid #252a45; color: #e0e6ff;
-  padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; width: 140px;
+  background: #0f1123;
+  border: 1px solid #252a45;
+  color: #e0e6ff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  width: 140px;
 }
-.control-input:focus { outline: none; border-color: #4f6ef7; }
-.control-input:disabled { opacity: 0.4; }
+.control-input:focus {
+  outline: none;
+  border-color: #4f6ef7;
+}
+.control-input:disabled {
+  opacity: 0.4;
+}
 .action-btn {
-  padding: 10px 28px; border: none; border-radius: 8px;
-  font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.15s; height: 42px;
+  padding: 10px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  height: 42px;
 }
-.action-btn.place { background: #4f6ef7; color: white; }
-.action-btn.place:hover:not(:disabled) { background: #3b5be0; }
-.action-btn.cashout { background: #f59e0b; color: #0f1123; }
-.action-btn.cashout:hover:not(:disabled) { background: #d97706; }
-.action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.message { text-align: center; padding: 10px; font-size: 0.9rem; font-weight: 600; }
-.msg-win { color: #4ade80; }
-.msg-loss { color: #f87171; }
+.action-btn.place {
+  background: #4f6ef7;
+  color: white;
+}
+.action-btn.place:hover:not(:disabled) {
+  background: #3b5be0;
+}
+.action-btn.cashout {
+  background: #f59e0b;
+  color: #0f1123;
+}
+.action-btn.cashout:hover:not(:disabled) {
+  background: #d97706;
+}
+.action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.message {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.msg-win {
+  color: #4ade80;
+}
+.msg-loss {
+  color: #f87171;
+}
 </style>
